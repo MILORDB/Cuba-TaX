@@ -1,17 +1,16 @@
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
-// Usa la URL de conexión completa si está disponible
+// Creamos la instancia de conexión
 const sequelize = process.env.DATABASE_URL
   ? new Sequelize(process.env.DATABASE_URL, {
       dialect: 'postgres',
       logging: false,
       dialectOptions: {
-        // Render requiere SSL para conexiones externas, pero la interna no.
-        // Si usas la URL interna, esto no es necesario. Si usas la externa, sí.
-        ssl: process.env.DATABASE_URL.includes('render.com') 
-          ? { require: true, rejectUnauthorized: false } 
-          : false,
+        ssl: {
+          require: true,
+          rejectUnauthorized: false,
+        },
       },
     })
   : new Sequelize(
@@ -26,4 +25,15 @@ const sequelize = process.env.DATABASE_URL
       }
     );
 
-module.exports = { sequelize };
+// Función para probar la conexión
+const testConnection = async () => {
+    try {
+        await sequelize.authenticate();
+        console.log('✅ Conexión a PostgreSQL exitosa.');
+    } catch (error) {
+        console.error('❌ No se pudo conectar a PostgreSQL:', error);
+    }
+};
+
+// 🔑 Exportamos AMBAS cosas
+module.exports = { sequelize, testConnection };
