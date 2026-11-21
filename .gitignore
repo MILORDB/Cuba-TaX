@@ -1,0 +1,25 @@
+# ===== Node =====
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# ===== Entorno (¡NUNCA subir!) =====
+.env
+.env.local
+.env.production
+
+# ===== Build =====
+build/
+dist/
+
+# ===== Logs =====
+*.log
+logs/
+
+# ===== Sistema operativo =====
+.DS_Store
+Thumbs.db
+
+# ===== Editor =====
+.vscode/
+.idea/
