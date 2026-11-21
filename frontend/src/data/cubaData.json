@@ -1,0 +1,82 @@
+{
+  "provincias": [
+    {
+      "nombre": "Pinar del Río",
+      "municipios": ["Pinar del Río", "San Juan y Martínez", "Guane", "Mantua", "Minas de Matahambre", "Viñales", "La Palma", "Los Palacios", "Consolación del Sur", "Sandino"]
+    },
+    {
+      "nombre": "Artemisa",
+      "municipios": ["Artemisa", "Güira de Melena", "Alquízar", "Bauta", "San Antonio de los Baños", "Caimito", "Mariel", "Bahía Honda"]
+    },
+    {
+      "nombre": "La Habana",
+      "municipios": ["Playa", "Plaza de la Revolución", "Centro Habana", "La Habana Vieja", "Regla", "La Habana del Este", "Guanabacoa", "San Miguel del Padrón", "Diez de Octubre", "Cerro", "Marianao", "La Lisa", "Boyeros", "Arroyo Naranjo", "Cotorro"]
+    },
+    {
+      "nombre": "Mayabeque",
+      "municipios": ["San José de las Lajas", "Jaruco", "Santa Cruz del Norte", "Madruga", "Nueva Paz", "San Nicolás", "Güines", "Melena del Sur", "Batabanó", "Quivicán", "Bejucal"]
+    },
+    {
+      "nombre": "Matanzas",
+      "municipios": ["Matanzas", "Cárdenas", "Martí", "Colón", "Perico", "Jovellanos", "Pedro Betancourt", "Limonar", "Unión de Reyes", "Ciénaga de Zapata", "Calimete", "Los Arabos", "Jagüey Grande", "Agramonte"]
+    },
+    {
+      "nombre": "Villa Clara",
+      "municipios": ["Santa Clara", "Placetas", "Remedios", "Caibarién", "Camajuaní", "Santo Domingo", "Encrucijada", "Manicaragua", "Cifuentes", "Quemado de Güines", "Sagua la Grande", "Corralillo", "Rancho Veloz"]
+    },
+    {
+      "nombre": "Cienfuegos",
+      "municipios": ["Cienfuegos", "Abreus", "Aguada de Pasajeros", "Rodas", "Palmira", "Lajas", "Cruces", "Cumanayagua"]
+    },
+    {
+      "nombre": "Sancti Spíritus",
+      "municipios": ["Sancti Spíritus", "Trinidad", "Cabaiguán", "Fomento", "Jatibonico", "Taguasco", "Yaguajay", "La Sierpe"]
+    },
+    {
+      "nombre": "Ciego de Ávila",
+      "municipios": ["Ciego de Ávila", "Morón", "Chambas", "Ciro Redondo", "Venezuela", "Baraguá", "Primero de Enero", "Florencia", "Majagua"]
+    },
+    {
+      "nombre": "Camagüey",
+      "municipios": ["Camagüey", "Florida", "Nuevitas", "Esmeralda", "Sierra de Cubitas", "Minas", "Sibanicú", "Guáimaro", "Santa Cruz del Sur", "Jimaguayú", "Najasa", "Vertientes"]
+    },
+    {
+      "nombre": "Las Tunas",
+      "municipios": ["Las Tunas", "Puerto Padre", "Manatí", "Amancio", "Jesús Menéndez", "Majibacoa", "Jobabo", "Colombia"]
+    },
+    {
+      "nombre": "Holguín",
+      "municipios": ["Holguín", "Gibara", "Banes", "Antilla", "Mayarí", "Sagua de Tánamo", "Cueto", "Frank País", "Cacocum", "Urbano Noris", "Báguanos", "Moa"]
+    },
+    {
+      "nombre": "Granma",
+      "municipios": ["Bayamo", "Manzanillo", "Pilón", "Río Cauto", "Yara", "Jiguaní", "Cauto Cristo", "Guisa", "Bartolomé Masó", "Buey Arriba", "Campechuela", "Media Luna", "Niquero"]
+    },
+    {
+      "nombre": "Santiago de Cuba",
+      "municipios": ["Santiago de Cuba", "San Luis", "Palma Soriano", "Contramaestre", "Mella", "Segundo Frente", "Guantánamo", "El Salvador", "Niceto Pérez", "Caujerí"]
+    },
+    {
+      "nombre": "Guantánamo",
+      "municipios": ["Guantánamo", "Baracoa", "Maisí", "Imías", "San Antonio del Sur", "Yateras", "Manuel Tames", "Niceto Pérez", "Caujerí", "El Salvador"]
+    },
+    {
+      "nombre": "Isla de la Juventud",
+      "municipios": ["Nueva Gerona", "Isla de la Juventud"]
+    }
+  ],
+  "tarifas": {
+    "base": 50.00,
+    "por_km": 15.00,
+    "por_minuto_espera": 5.00,
+    "recargo_nocturno": 1.25,
+    "recargo_fin_semana": 1.15,
+    "tarifa_minima": 100.00
+  },
+  "configuracion": {
+    "tiempo_maximo_espera_minutos": 10,
+    "distancia_maxima_km": 100,
+    "moneda": "CUP",
+    "version_app": "1.0.0"
+  }
+}
