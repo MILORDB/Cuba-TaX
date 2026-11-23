@@ -677,17 +677,17 @@ const Dashboard = () => {
     const response = await axios.put('/api/users/become-driver');
     console.log('🔍 Respuesta become-driver:', response.data);
 
-    // 1. Guardar el nuevo token
+    // 1. Guardar el nuevo token (con el tipo 'conductor')
     if (response.data.token) {
       authService.setAuthToken(response.data.token);
     }
 
-    // 2. Actualizar el estado del usuario con los datos del backend
+    // 2. Actualizar el estado 'user' inmediatamente con los datos del backend
     if (response.data.user) {
       const updatedUser = {
         ...response.data.user,
         id: Number(response.data.user.id),
-        tipo_usuario: 'conductor', // Forzar el tipo
+        tipo_usuario: 'conductor', // Forzar el tipo por si acaso
       };
       setUser(updatedUser);
       console.log('🔍 Usuario actualizado a conductor:', updatedUser);
@@ -696,10 +696,11 @@ const Dashboard = () => {
     // 3. Mostrar mensaje de éxito
     setDriverMessage('¡Felicidades! Ahora eres conductor. Recargando...');
 
-    // 4. Recargar la página después de un breve delay
+    // 4. Forzar recarga completa de la página después de un breve delay
     setTimeout(() => {
       window.location.href = '/dashboard'; // Recarga completa forzada
     }, 2000);
+
   } catch (error) {
     console.error('❌ Error al cambiar a conductor:', error);
     setDriverMessage(error.response?.data?.message || 'Error al cambiar a conductor');
