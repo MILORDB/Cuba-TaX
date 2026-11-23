@@ -1,7 +1,48 @@
 import axios from 'axios';
 
-const API_URL = `${process.env.REACT_APP_API_URL}/api`;
+// ============================================================
+// CONFIGURACIÓN BASE DE AXIOS
+// ============================================================
+// En desarrollo local, el proxy de React (package.json) redirige /api al backend.
+// En producción (Render), usamos la variable de entorno REACT_APP_API_URL.
+const API_URL = process.env.REACT_APP_API_URL
+  ? `${process.env.REACT_APP_API_URL}/api`
+  : '/api';
 
+// ============================================================
+// INTERCEPTOR GLOBAL DE AXIOS (Añade el token automáticamente)
+// ============================================================
+axios.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// ============================================================
+// INTERCEPTOR DE RESPUESTAS (Si el token expira, cierra sesión)
+// ============================================================
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      console.warn('Token inválido o expirado. Cerrando sesión...');
+      localStorage.removeItem('token');
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+// ============================================================
+// FUNCIONES DE AUTENTICACIÓN
+// ============================================================
 const register = (userData) => {
   return axios.post(`${API_URL}/register`, userData);
 };
@@ -20,12 +61,10 @@ const setAuthToken = (token) => {
   }
 };
 
-// 🔑 NUEVA FUNCIÓN: obtiene el usuario completo desde el backend
 const fetchCurrentUser = async () => {
   try {
     const token = localStorage.getItem('token');
     if (!token) return null;
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     const response = await axios.get(`${API_URL}/users/me`);
     return response.data;
   } catch (error) {
@@ -34,7 +73,6 @@ const fetchCurrentUser = async () => {
   }
 };
 
-// Fallback: leer datos del token (por compatibilidad)
 const getCurrentUser = () => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -57,7 +95,6 @@ const getCurrentUser = () => {
   return null;
 };
 
-// 🔑 IMPORTANTE: exportar como objeto nombrado y default
 const authService = {
   register,
   login,
