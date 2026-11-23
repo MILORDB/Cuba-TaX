@@ -670,22 +670,42 @@ const Dashboard = () => {
   // ============================================================
   // CONVERTIRSE EN CONDUCTOR
   // ============================================================
-  const handleBecomeDriver = async () => {
-    setDriverLoading(true);
-    setDriverMessage('');
-    try {
-      const response = await axios.put('/api/users/become-driver');
-      if (response.data.token) {
-        authService.setAuthToken(response.data.token);
-      }
-      setDriverMessage('¡Felicidades! Ahora eres conductor. Recargando...');
-      setTimeout(() => window.location.reload(), 2000);
-    } catch (error) {
-      setDriverMessage(error.response?.data?.message || 'Error al cambiar a conductor');
-      setDriverLoading(false);
-    }
-  };
+ const handleBecomeDriver = async () => {
+  setDriverLoading(true);
+  setDriverMessage('');
+  try {
+    const response = await axios.put('/api/users/become-driver');
+    console.log('🔍 Respuesta become-driver:', response.data);
 
+    // 1. Guardar el nuevo token
+    if (response.data.token) {
+      authService.setAuthToken(response.data.token);
+    }
+
+    // 2. Actualizar el estado del usuario con los datos del backend
+    if (response.data.user) {
+      const updatedUser = {
+        ...response.data.user,
+        id: Number(response.data.user.id),
+        tipo_usuario: 'conductor', // Forzar el tipo
+      };
+      setUser(updatedUser);
+      console.log('🔍 Usuario actualizado a conductor:', updatedUser);
+    }
+
+    // 3. Mostrar mensaje de éxito
+    setDriverMessage('¡Felicidades! Ahora eres conductor. Recargando...');
+
+    // 4. Recargar la página después de un breve delay
+    setTimeout(() => {
+      window.location.href = '/dashboard'; // Recarga completa forzada
+    }, 2000);
+  } catch (error) {
+    console.error('❌ Error al cambiar a conductor:', error);
+    setDriverMessage(error.response?.data?.message || 'Error al cambiar a conductor');
+    setDriverLoading(false);
+  }
+};
   // ============================================================
   // VEHÍCULO — Guardar
   // ============================================================
