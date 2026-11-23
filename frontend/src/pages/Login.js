@@ -8,18 +8,33 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
 
     try {
       const response = await authService.login({ email, password });
+      console.log('🔍 Login response:', response.data);
+
+      // 🔑 GUARDAR EL TOKEN EN LOCALSTORAGE Y EN AXIOS
       authService.setAuthToken(response.data.token);
+
+      // Verificar que el token se guardó
+      const tokenGuardado = localStorage.getItem('token');
+      console.log('🔍 Token guardado en localStorage:', tokenGuardado ? 'SÍ' : 'NO');
+      console.log('🔍 Primeros 50 chars:', tokenGuardado ? tokenGuardado.substring(0, 50) : 'N/A');
+
+      // 🔑 REDIRIGIR AL DASHBOARD
       navigate('/dashboard');
     } catch (err) {
+      console.error('❌ Error en login:', err);
       setError(err.response?.data?.message || 'Error al iniciar sesión');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -45,6 +60,7 @@ const Login = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="ejemplo@correo.com"
                   required
+                  autoComplete="email"
                 />
               </Form.Group>
 
@@ -56,11 +72,21 @@ const Login = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="******"
                   required
+                  autoComplete="current-password"
                 />
               </Form.Group>
 
-              <Button variant="primary" type="submit" className="w-100">
-                <i className="fas fa-sign-in-alt me-2"></i> Iniciar Sesión
+              <Button variant="primary" type="submit" className="w-100" disabled={loading}>
+                {loading ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    Iniciando sesión...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-sign-in-alt me-2"></i> Iniciar Sesión
+                  </>
+                )}
               </Button>
             </Form>
 
