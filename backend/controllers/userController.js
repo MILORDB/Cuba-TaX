@@ -1,4 +1,6 @@
 const User = require('../models/User');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 // ============================================================
 // ACTUALIZAR PERFIL DEL USUARIO AUTENTICADO
@@ -30,37 +32,19 @@ const updateProfile = async (req, res) => {
 };
 
 // ============================================================
-// OBTENER USUARIO AUTENTICADO (/users/me) — CON LOGS
+// OBTENER USUARIO AUTENTICADO (/users/me)
 // ============================================================
 const getMe = async (req, res) => {
     try {
-        console.log('========================================');
-        console.log('🔍 [getMe] PETICIÓN RECIBIDA');
-        console.log('   req.user:', JSON.stringify(req.user, null, 2));
-        console.log('   req.user.id:', req.user?.id);
-        console.log('   Tipo de id:', typeof req.user?.id);
-        console.log('   req.user.email:', req.user?.email);
-        console.log('   req.user.tipo:', req.user?.tipo);
-
-        if (!req.user || !req.user.id) {
-            console.log('   ❌ req.user.id no existe');
-            return res.status(401).json({ message: 'Token inválido: falta id' });
-        }
-
         const user = await User.findByPk(req.user.id, {
             attributes: { exclude: ['password'] }
         });
-
-        console.log('   ✅ Usuario encontrado:', user?.nombre_completo, '| ID:', user?.id);
-        console.log('   Tipo de usuario:', user?.tipo_usuario);
-        console.log('========================================');
-
         if (!user) {
             return res.status(404).json({ message: 'Usuario no encontrado' });
         }
         res.json(user);
     } catch (error) {
-        console.error('❌ [getMe] ERROR:', error);
+        console.error(error);
         res.status(500).json({ message: 'Error al obtener usuario', error: error.message });
     }
 };
@@ -85,22 +69,30 @@ const becomeDriver = async (req, res) => {
             return res.status(400).json({ message: 'Un administrador no puede cambiarse a conductor' });
         }
 
+        // 🔑 Cambiar tipo de usuario
         user.tipo_usuario = 'conductor';
         await user.save();
 
+        // 🔑 Recargar para obtener los datos actualizados
+        await user.reload();
+
         const { password, ...userData } = user.toJSON();
 
-        const jwt = require('jsonwebtoken');
+        // 🔑 Generar nuevo token con el tipo actualizado
         const newToken = jwt.sign(
             {
                 id: user.id,
                 email: user.email,
-                tipo: user.tipo_usuario,
+                tipo: user.tipo_usuario,          // ← Ahora es 'conductor'
                 nombre_completo: user.nombre_completo
             },
             process.env.JWT_SECRET,
             { expiresIn: '24h' }
         );
+
+        console.log('🔍 [becomeDriver] Usuario actualizado a conductor:', userData.email);
+        console.log('🔍 [becomeDriver] Tipo:', userData.tipo_usuario);
+        console.log('🔍 [becomeDriver] Nuevo token generado:', newToken.substring(0, 30) + '...');
 
         res.json({
             message: '¡Felicidades! Ahora eres conductor en Cuba-TaX',
@@ -108,7 +100,7 @@ const becomeDriver = async (req, res) => {
             token: newToken
         });
     } catch (error) {
-        console.error(error);
+        console.error('❌ [becomeDriver] Error:', error);
         res.status(500).json({ message: 'Error al cambiar a conductor', error: error.message });
     }
 };
@@ -246,7 +238,6 @@ const changePassword = async (req, res) => {
             return res.status(404).json({ message: 'Usuario no encontrado' });
         }
 
-        const bcrypt = require('bcryptjs');
         const esValida = await bcrypt.compare(password_actual, user.password);
         if (!esValida) {
             return res.status(401).json({ message: 'La contraseña actual es incorrecta.' });
