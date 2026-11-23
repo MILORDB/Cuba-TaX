@@ -129,10 +129,13 @@ const Dashboard = () => {
   const fetchTrips = useCallback(async () => {
     try {
       const response = await axios.get('/api/trips/my');
-      setTrips(response.data);
-      return response.data;
+      // 🔑 Asegurar que siempre sea un array
+      const data = Array.isArray(response.data) ? response.data : [];
+      setTrips(data);
+      return data;
     } catch (error) {
       console.error('Error al obtener historial:', error);
+      setTrips([]);
       return [];
     }
   }, []);
@@ -140,9 +143,9 @@ const Dashboard = () => {
   const fetchPendingTrips = useCallback(async () => {
     try {
       const response = await axios.get('/api/trips/pending');
-      setSolicitudesDirectas(response.data.solicitudes_directas || []);
-      setViajesAbiertos(response.data.viajes_abiertos || []);
-      setPendingTrips(response.data.viajes || []);
+      setSolicitudesDirectas(Array.isArray(response.data.solicitudes_directas) ? response.data.solicitudes_directas : []);
+      setViajesAbiertos(Array.isArray(response.data.viajes_abiertos) ? response.data.viajes_abiertos : []);
+      setPendingTrips(Array.isArray(response.data.viajes) ? response.data.viajes : []);
       setTieneViajeActivo(response.data.tiene_viaje_activo || false);
 
       if (typeof response.data.disponible === 'boolean') {
@@ -153,9 +156,12 @@ const Dashboard = () => {
         });
       }
 
-      return response.data.viajes || [];
+      return Array.isArray(response.data.viajes) ? response.data.viajes : [];
     } catch (error) {
       console.error('Error al obtener viajes pendientes:', error);
+      setSolicitudesDirectas([]);
+      setViajesAbiertos([]);
+      setPendingTrips([]);
       return [];
     }
   }, []);
@@ -376,7 +382,7 @@ const Dashboard = () => {
 
     const interval = setInterval(async () => {
       try {
-        const nuevosTrips = await axios.get('/api/trips/my').then(r => r.data);
+        const nuevosTrips = await axios.get('/api/trips/my').then(r => Array.isArray(r.data) ? r.data : []);
         setTrips(prev => compararTrips(prev, nuevosTrips) ? prev : nuevosTrips);
 
         if (user.tipo_usuario === 'conductor') {
@@ -393,9 +399,9 @@ const Dashboard = () => {
   // ============================================================
   // EFECTO 3.5: Enviar ubicación del conductor cada 60 segundos
   // ============================================================
-  const viajeActivoParaEfecto = trips.find(
-    t => t.estado === 'en_curso' && Number(t.conductor_id) === Number(user?.id)
-  );
+  const viajeActivoParaEfecto = Array.isArray(trips)
+    ? trips.find(t => t.estado === 'en_curso' && Number(t.conductor_id) === Number(user?.id))
+    : null;
 
   useEffect(() => {
     if (!user || user.tipo_usuario !== 'conductor') return;
@@ -430,8 +436,8 @@ const Dashboard = () => {
   // ============================================================
   useEffect(() => {
     if (!user || user.tipo_usuario !== 'pasajero') return;
-    if (!trips.length) {
-      prevTripsRef.current = trips;
+    if (!Array.isArray(trips) || !trips.length) {
+      prevTripsRef.current = Array.isArray(trips) ? trips : [];
       return;
     }
     if (prevTripsRef.current === null) {
@@ -449,6 +455,7 @@ const Dashboard = () => {
     });
     prevTripsRef.current = trips;
   }, [trips, user]);
+
   // ============================================================
   // FUNCIONES DE VIAJES
   // ============================================================
@@ -722,6 +729,7 @@ const Dashboard = () => {
       setVehicleLoading(false);
     }
   };
+
   // ============================================================
   // RENDER
   // ============================================================
@@ -736,13 +744,14 @@ const Dashboard = () => {
     );
   }
 
-  const viajeActivo = trips.find(
-    t => t.estado === 'en_curso' && Number(t.conductor_id) === Number(user.id)
-  );
-  const miViajeActivoPasajero = trips.find(
-    t => (t.estado === 'en_curso' || t.estado === 'pendiente')
-      && Number(t.pasajero_id) === Number(user.id)
-  );
+  // 🔑 PROTECCIÓN: Asegurar que trips sea array antes de usar .find()
+  const viajeActivo = Array.isArray(trips)
+    ? trips.find(t => t.estado === 'en_curso' && Number(t.conductor_id) === Number(user.id))
+    : null;
+
+  const miViajeActivoPasajero = Array.isArray(trips)
+    ? trips.find(t => (t.estado === 'en_curso' || t.estado === 'pendiente') && Number(t.pasajero_id) === Number(user.id))
+    : null;
 
   return (
     <Layout>
@@ -857,7 +866,7 @@ const Dashboard = () => {
                         onClick={() => setShowPatrolModal(true)}
                         className="me-2 mb-2"
                       >
-                        <i className="fas fa-exclamation-triangle me-2"></i>Puntos de Interes
+                        <i className="fas fa-exclamation-triangle me-2"></i>Patrullas
                       </Button>
                     )}
                     {user.tipo_usuario === 'conductor' && vehicleInfo?.vehiculo_registrado && (
@@ -1239,7 +1248,7 @@ const Dashboard = () => {
                 <div className="d-flex justify-content-between align-items-center">
                   <div>
                     <i className="fas fa-exclamation-triangle me-2"></i>
-                    <strong>Tu suscripción está vencida o no existe.</strong> No aparecerás en las búsquedas de pasajeros ni podrás ver los puntos de interes.
+                    <strong>Tu suscripción está vencida o no existe.</strong> No aparecerás en las búsquedas de pasajeros ni podrás ver las patrullas.
                   </div>
                   <Button variant="warning" size="sm" onClick={() => setShowSubscriptionModal(true)}>
                     <i className="fas fa-id-card me-1"></i>Comprar Suscripción
@@ -1361,7 +1370,7 @@ const Dashboard = () => {
               </Row>
             )}
 
-            {solicitudesDirectas.length > 0 && (
+            {Array.isArray(solicitudesDirectas) && solicitudesDirectas.length > 0 && (
               <>
                 <h5 className="fw-bold mb-3 text-success">
                   <i className="fas fa-user-check me-2"></i>Solicitudes directas para ti ({solicitudesDirectas.length})
@@ -1469,7 +1478,7 @@ const Dashboard = () => {
                     <div className="d-flex justify-content-between align-items-center mb-3">
                       <h5 className="fw-bold mb-0 text-warning">
                         <i className="fas fa-globe me-2"></i>Viajes abiertos en tu zona
-                        {viajesAbiertos.length > 0 && (
+                        {Array.isArray(viajesAbiertos) && viajesAbiertos.length > 0 && (
                           <Badge bg="danger" pill className="ms-2">
                             {viajesAbiertos.length}
                           </Badge>
@@ -1479,7 +1488,10 @@ const Dashboard = () => {
                         <Badge bg="success" className="me-2">
                           <i className="fas fa-sync-alt me-1"></i>Actualización automática
                         </Badge>
-                        </div>
+                        <Button variant="outline-primary" size="sm" onClick={fetchPendingTrips}>
+                          <i className="fas fa-sync-alt me-1"></i>Refrescar
+                        </Button>
+                      </div>
                     </div>
 
                     <Alert variant="info" className="py-2 small mb-3">
@@ -1494,7 +1506,7 @@ const Dashboard = () => {
                       </Alert>
                     )}
 
-                    {viajesAbiertos.length === 0 ? (
+                    {!Array.isArray(viajesAbiertos) || viajesAbiertos.length === 0 ? (
                       <Alert variant="info" className="text-center">
                         <i className="fas fa-info-circle me-2"></i>
                         No hay viajes abiertos en tu zona. Esperando solicitudes...
@@ -1600,7 +1612,7 @@ const Dashboard = () => {
                 <h4 className="fw-bold mb-3">
                   <i className="fas fa-history text-primary me-2"></i>Mi Historial de Viajes
                 </h4>
-                {trips.length === 0 ? (
+                {!Array.isArray(trips) || trips.length === 0 ? (
                   <Alert variant="info" className="text-center">
                     <i className="fas fa-info-circle me-2"></i>
                     No tienes viajes aún.
@@ -1721,182 +1733,174 @@ const Dashboard = () => {
         </Row>
       </Container>
 
-{/* ===== MODAL COMPRAR SUSCRIPCIÓN ===== */}
-<Modal
-  show={showSubscriptionModal}
-  onHide={() => {
-    setShowSubscriptionModal(false);
-    setSubscriptionMessage('');
-    setCodigoConductor('');
-  }}
-  centered
-  size="lg"
->
-  <Modal.Header closeButton className="bg-warning">
-    <Modal.Title>
-      <i className="fas fa-id-card me-2"></i>
-      {subscriptionStatus?.activa ? 'Mi Suscripción' : 'Comprar Suscripción'}
-    </Modal.Title>
-  </Modal.Header>
-  <Modal.Body className="p-4">
-    {/* 🔑 Número de tarjeta del admin */}
-    {numeroTarjetaAdmin ? (
-      <Alert variant="primary" className="mb-4">
-        <div className="text-center">
-          <i className="fas fa-credit-card fa-2x mb-2"></i>
-          <h6 className="fw-bold mb-2">Transfiere a esta tarjeta:</h6>
-          <div
-            style={{
-              fontSize: '1.3rem',
-              letterSpacing: '3px',
-              fontWeight: 'bold',
-              fontFamily: 'monospace',
-              padding: '10px',
-              background: 'white',
-              borderRadius: '8px',
-              border: '2px dashed #0d6efd',
-            }}
-          >
-            {numeroTarjetaAdmin}
-          </div>
-          <small className="text-muted d-block mt-2">
-            <i className="fas fa-info-circle me-1"></i>
-            Transfiere el monto y recibirás un código de confirmación.
-          </small>
-        </div>
-      </Alert>
-    ) : (
-      <Alert variant="warning" className="mb-4">
-        <i className="fas fa-exclamation-triangle me-2"></i>
-        El administrador aún no ha configurado un número de tarjeta. Contacta al soporte.
-      </Alert>
-    )}
+      {/* ===== MODAL COMPRAR SUSCRIPCIÓN ===== */}
+      <Modal
+        show={showSubscriptionModal}
+        onHide={() => {
+          setShowSubscriptionModal(false);
+          setSubscriptionMessage('');
+          setCodigoConductor('');
+        }}
+        centered
+        size="lg"
+      >
+        <Modal.Header closeButton className="bg-warning">
+          <Modal.Title>
+            <i className="fas fa-id-card me-2"></i>
+            {subscriptionStatus?.activa ? 'Mi Suscripción' : 'Comprar Suscripción'}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="p-4">
+          {numeroTarjetaAdmin ? (
+            <Alert variant="primary" className="mb-4">
+              <div className="text-center">
+                <i className="fas fa-credit-card fa-2x mb-2"></i>
+                <h6 className="fw-bold mb-2">Transfiere a esta tarjeta:</h6>
+                <div
+                  style={{
+                    fontSize: '1.3rem',
+                    letterSpacing: '3px',
+                    fontWeight: 'bold',
+                    fontFamily: 'monospace',
+                    padding: '10px',
+                    background: 'white',
+                    borderRadius: '8px',
+                    border: '2px dashed #0d6efd',
+                  }}
+                >
+                  {numeroTarjetaAdmin}
+                </div>
+                <small className="text-muted d-block mt-2">
+                  <i className="fas fa-info-circle me-1"></i>
+                  Transfiere el monto y recibirás un código de confirmación.
+                </small>
+              </div>
+            </Alert>
+          ) : (
+            <Alert variant="warning" className="mb-4">
+              <i className="fas fa-exclamation-triangle me-2"></i>
+              El administrador aún no ha configurado un número de tarjeta. Contacta al soporte.
+            </Alert>
+          )}
 
-    {/* Caso 1: Suscripción activa */}
-    {subscriptionStatus?.activa && (
-      <Alert variant="success" className="mb-4">
-        <i className="fas fa-check-circle me-2"></i>
-        <strong>Tu suscripción está activa.</strong>
-        <br />
-        Vence el <strong>{new Date(subscriptionStatus.expira).toLocaleDateString('es-CU')}</strong>{' '}
-        ({subscriptionStatus.diasRestantes} día(s) restantes)
-      </Alert>
-    )}
+          {subscriptionStatus?.activa && (
+            <Alert variant="success" className="mb-4">
+              <i className="fas fa-check-circle me-2"></i>
+              <strong>Tu suscripción está activa.</strong>
+              <br />
+              Vence el <strong>{new Date(subscriptionStatus.expira).toLocaleDateString('es-CU')}</strong>{' '}
+              ({subscriptionStatus.diasRestantes} día(s) restantes)
+            </Alert>
+          )}
 
-    {/* Caso 2: Solicitud pendiente */}
-    {miSolicitud && miSolicitud.estado === 'pendiente' && (
-      <Alert variant="info" className="mb-4">
-        <i className="fas fa-hourglass-half me-2"></i>
-        <strong>Tienes una solicitud pendiente.</strong> El administrador debe validar el pago.
-        <br />
-        <small>Enviaste el código: <code>{miSolicitud.codigo_conductor}</code></small>
-      </Alert>
-    )}
+          {miSolicitud && miSolicitud.estado === 'pendiente' && (
+            <Alert variant="info" className="mb-4">
+              <i className="fas fa-hourglass-half me-2"></i>
+              <strong>Tienes una solicitud pendiente.</strong> El administrador debe validar el pago.
+              <br />
+              <small>Enviaste el código: <code>{miSolicitud.codigo_conductor}</code></small>
+            </Alert>
+          )}
 
-    {/* Caso 3: Solicitud rechazada */}
-    {miSolicitud && miSolicitud.estado === 'rechazada' && (
-      <Alert variant="danger" className="mb-4">
-        <i className="fas fa-times-circle me-2"></i>
-        <strong>Tu última solicitud fue rechazada.</strong>
-        {miSolicitud.notas && <><br /><small>Motivo: {miSolicitud.notas}</small></>}
-      </Alert>
-    )}
+          {miSolicitud && miSolicitud.estado === 'rechazada' && (
+            <Alert variant="danger" className="mb-4">
+              <i className="fas fa-times-circle me-2"></i>
+              <strong>Tu última solicitud fue rechazada.</strong>
+              {miSolicitud.notas && <><br /><small>Motivo: {miSolicitud.notas}</small></>}
+            </Alert>
+          )}
 
-    {/* Caso 4: Solicitud aprobada Y suscripción activa */}
-    {miSolicitud && miSolicitud.estado === 'aprobada' && subscriptionStatus?.activa && (
-      <Alert variant="success" className="mb-4">
-        <i className="fas fa-check-circle me-2"></i>
-        <strong>¡Tu última solicitud fue aprobada!</strong>
-        <br />
-        <small>Aprobada el{' '}
-          {miSolicitud.aprobado_en
-            ? new Date(miSolicitud.aprobado_en).toLocaleDateString('es-CU')
-            : 'N/A'}
-        </small>
-      </Alert>
-    )}
+          {miSolicitud && miSolicitud.estado === 'aprobada' && subscriptionStatus?.activa && (
+            <Alert variant="success" className="mb-4">
+              <i className="fas fa-check-circle me-2"></i>
+              <strong>¡Tu última solicitud fue aprobada!</strong>
+              <br />
+              <small>Aprobada el{' '}
+                {miSolicitud.aprobado_en
+                  ? new Date(miSolicitud.aprobado_en).toLocaleDateString('es-CU')
+                  : 'N/A'}
+              </small>
+            </Alert>
+          )}
 
-    {/* Caso 5: Suscripción NO activa Y (sin solicitud, rechazada, o aprobada pero vencida) → formulario */}
-    {!subscriptionStatus?.activa
-      && (!miSolicitud
-          || miSolicitud.estado === 'rechazada'
-          || miSolicitud.estado === 'aprobada') && (
-      <>
-        <div className="text-center mb-4">
-          <i className="fas fa-money-bill-wave fa-3x text-success mb-3"></i>
-          <h5 className="fw-bold">¿Cómo funciona?</h5>
-          <ol className="text-start small text-muted">
-            <li>Realiza una transferencia a la tarjeta de arriba.</li>
-            <li>Al enviar el dinero, recibirás un <strong>código</strong> de confirmación.</li>
-            <li>El administrador recibe otro código al confirmar la recepción.</li>
-            <li>Ingresa tu código aquí abajo. Cuando el admin ingrese el suyo, se activará automáticamente.</li>
-          </ol>
-        </div>
+          {!subscriptionStatus?.activa
+            && (!miSolicitud
+                || miSolicitud.estado === 'rechazada'
+                || miSolicitud.estado === 'aprobada') && (
+            <>
+              <div className="text-center mb-4">
+                <i className="fas fa-money-bill-wave fa-3x text-success mb-3"></i>
+                <h5 className="fw-bold">¿Cómo funciona?</h5>
+                <ol className="text-start small text-muted">
+                  <li>Realiza una transferencia a la tarjeta de arriba.</li>
+                  <li>Al enviar el dinero, recibirás un <strong>código</strong> de confirmación.</li>
+                  <li>El administrador recibe otro código al confirmar la recepción.</li>
+                  <li>Ingresa tu código aquí abajo. Cuando el admin ingrese el suyo, se activará automáticamente.</li>
+                </ol>
+              </div>
 
-        {subscriptionMessage && (
-          <Alert variant={subscriptionMessage.includes('Solicitud') ? 'success' : 'danger'}>
-            {subscriptionMessage}
-          </Alert>
-        )}
+              {subscriptionMessage && (
+                <Alert variant={subscriptionMessage.includes('Solicitud') ? 'success' : 'danger'}>
+                  {subscriptionMessage}
+                </Alert>
+              )}
 
-        <Form onSubmit={enviarCodigoSuscripcion}>
-          <Form.Group className="mb-3">
-            <Form.Label className="fw-bold">
-              <i className="fas fa-key me-2"></i>Ingresa tu código de transferencia *
-            </Form.Label>
-            <Form.Control
-              type="text"
-              value={codigoConductor}
-              onChange={(e) => setCodigoConductor(e.target.value.toUpperCase())}
-              placeholder="Ej: ABC12-DEF34"
-              autoFocus
-              style={{ fontSize: '1.1rem', letterSpacing: '2px', textAlign: 'center' }}
-            />
-            <Form.Text className="text-muted">
-              Escribe el código exactamente como lo recibiste.
-            </Form.Text>
-          </Form.Group>
+              <Form onSubmit={enviarCodigoSuscripcion}>
+                <Form.Group className="mb-3">
+                  <Form.Label className="fw-bold">
+                    <i className="fas fa-key me-2"></i>Ingresa tu código de transferencia *
+                  </Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={codigoConductor}
+                    onChange={(e) => setCodigoConductor(e.target.value.toUpperCase())}
+                    placeholder="Ej: ABC12-DEF34"
+                    autoFocus
+                    style={{ fontSize: '1.1rem', letterSpacing: '2px', textAlign: 'center' }}
+                  />
+                  <Form.Text className="text-muted">
+                    Escribe el código exactamente como lo recibiste.
+                  </Form.Text>
+                </Form.Group>
 
-          <Button
-            variant="warning"
-            type="submit"
-            className="w-100"
-            disabled={subscriptionLoading}
-          >
-            {subscriptionLoading ? (
-              <>
-                <Spinner animation="border" size="sm" className="me-2" />
-                Enviando...
-              </>
-            ) : (
-              <>
-                <i className="fas fa-paper-plane me-2"></i>Enviar solicitud
-              </>
-            )}
-          </Button>
-        </Form>
-      </>
-    )}
+                <Button
+                  variant="warning"
+                  type="submit"
+                  className="w-100"
+                  disabled={subscriptionLoading}
+                >
+                  {subscriptionLoading ? (
+                    <>
+                      <Spinner animation="border" size="sm" className="me-2" />
+                      Enviando...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-paper-plane me-2"></i>Enviar solicitud
+                    </>
+                  )}
+                </Button>
+              </Form>
+            </>
+          )}
 
-    {/* Caso 6: Suscripción activa → botón cerrar */}
-    {subscriptionStatus?.activa && (
-      <div className="text-center mt-3">
-        <Button variant="outline-secondary" onClick={() => setShowSubscriptionModal(false)}>
-          Cerrar
-        </Button>
-      </div>
-    )}
+          {subscriptionStatus?.activa && (
+            <div className="text-center mt-3">
+              <Button variant="outline-secondary" onClick={() => setShowSubscriptionModal(false)}>
+                Cerrar
+              </Button>
+            </div>
+          )}
 
-    {/* Caso 7: Solicitud pendiente → botón cerrar */}
-    {miSolicitud && miSolicitud.estado === 'pendiente' && (
-      <div className="text-center mt-3">
-        <Button variant="outline-secondary" onClick={() => setShowSubscriptionModal(false)}>
-          Cerrar
-        </Button>
-      </div>
-    )}
-  </Modal.Body>
-</Modal>
+          {miSolicitud && miSolicitud.estado === 'pendiente' && (
+            <div className="text-center mt-3">
+              <Button variant="outline-secondary" onClick={() => setShowSubscriptionModal(false)}>
+                Cerrar
+              </Button>
+            </div>
+          )}
+        </Modal.Body>
+      </Modal>
 
       {/* MODAL FINALIZAR VIAJE */}
       <Modal
