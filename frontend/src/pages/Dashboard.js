@@ -670,7 +670,7 @@ const Dashboard = () => {
   // ============================================================
   // CONVERTIRSE EN CONDUCTOR
   // ============================================================
- const handleBecomeDriver = async () => {
+const handleBecomeDriver = async () => {
   setDriverLoading(true);
   setDriverMessage('');
   try {
@@ -680,6 +680,7 @@ const Dashboard = () => {
     // 1. Guardar el nuevo token (con el tipo 'conductor')
     if (response.data.token) {
       authService.setAuthToken(response.data.token);
+      console.log('🔍 Token guardado:', localStorage.getItem('token').substring(0, 30) + '...');
     }
 
     // 2. Actualizar el estado 'user' inmediatamente con los datos del backend
@@ -687,7 +688,7 @@ const Dashboard = () => {
       const updatedUser = {
         ...response.data.user,
         id: Number(response.data.user.id),
-        tipo_usuario: 'conductor', // Forzar el tipo por si acaso
+        tipo_usuario: 'conductor', // Forzar el tipo
       };
       setUser(updatedUser);
       console.log('🔍 Usuario actualizado a conductor:', updatedUser);
@@ -700,7 +701,6 @@ const Dashboard = () => {
     setTimeout(() => {
       window.location.href = '/dashboard'; // Recarga completa forzada
     }, 2000);
-
   } catch (error) {
     console.error('❌ Error al cambiar a conductor:', error);
     setDriverMessage(error.response?.data?.message || 'Error al cambiar a conductor');
