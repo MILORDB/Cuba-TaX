@@ -676,31 +676,33 @@ const handleBecomeDriver = async () => {
   try {
     const response = await axios.put('/api/users/become-driver');
     console.log('🔍 Respuesta become-driver:', response.data);
+    console.log('🔍 Token nuevo:', response.data.token ? 'SÍ' : 'NO');
+    console.log('🔍 Tipo en user:', response.data.user?.tipo_usuario);
 
-    // 1. Guardar el nuevo token (con el tipo 'conductor')
+    // 🔑 1. GUARDAR EL TOKEN NUEVO (con tipo 'conductor')
     if (response.data.token) {
       authService.setAuthToken(response.data.token);
-      console.log('🔍 Token guardado:', localStorage.getItem('token').substring(0, 30) + '...');
+      console.log('🔍 Token guardado en localStorage:', localStorage.getItem('token').substring(0, 50) + '...');
     }
 
-    // 2. Actualizar el estado 'user' inmediatamente con los datos del backend
+    // 🔑 2. Actualizar el estado del usuario
     if (response.data.user) {
       const updatedUser = {
         ...response.data.user,
         id: Number(response.data.user.id),
-        tipo_usuario: 'conductor', // Forzar el tipo
+        tipo_usuario: response.data.user.tipo_usuario || 'conductor',
       };
       setUser(updatedUser);
-      console.log('🔍 Usuario actualizado a conductor:', updatedUser);
+      console.log('🔍 Usuario actualizado:', updatedUser);
     }
 
-    // 3. Mostrar mensaje de éxito
     setDriverMessage('¡Felicidades! Ahora eres conductor. Recargando...');
 
-    // 4. Forzar recarga completa de la página después de un breve delay
+    // 🔑 3. Recargar la página después de un breve delay
     setTimeout(() => {
-      window.location.href = '/dashboard'; // Recarga completa forzada
+      window.location.href = '/dashboard';
     }, 2000);
+
   } catch (error) {
     console.error('❌ Error al cambiar a conductor:', error);
     setDriverMessage(error.response?.data?.message || 'Error al cambiar a conductor');
