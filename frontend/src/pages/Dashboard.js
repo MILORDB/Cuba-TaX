@@ -247,49 +247,41 @@ const Dashboard = () => {
   // ============================================================
   // EFECTO 1: Cargar usuario
   // ============================================================
-  useEffect(() => {
-    const cargarUsuario = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        navigate('/login');
-        return;
-      }
-      authService.setAuthToken(token);
+ useEffect(() => {
+  const cargarUsuario = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+    authService.setAuthToken(token);
 
-      let userData = null;
-      try {
-        userData = await authService.fetchCurrentUser();
-      } catch (e) {
-        console.warn('No se pudo obtener /users/me, usando datos del token');
-      }
+    let userData = null;
+    try {
+      userData = await authService.fetchCurrentUser();
+    } catch (e) {
+      console.warn('No se pudo obtener /users/me');
+    }
 
-      if (!userData) userData = authService.getCurrentUser();
-      if (!userData) {
-        navigate('/login');
-        return;
-      }
+    if (!userData) userData = authService.getCurrentUser();
+    if (!userData) {
+      navigate('/login');
+      return;
+    }
 
-      const normalizedUser = {
-        ...userData,
-        id: Number(userData.id),
-        disponible: !!userData.disponible,
-      };
-      setUser(normalizedUser);
-
-      setEditForm({
-        nombre_completo: userData.nombre_completo || '',
-        telefono: userData.telefono || '',
-        direccion: userData.direccion || '',
-        provincia: userData.provincia || '',
-        municipio: userData.municipio || ''
-      });
-      if (userData.provincia) {
-        const prov = cubaData.provincias.find(p => p.nombre === userData.provincia);
-        setMunicipios(prov ? prov.municipios : []);
-      }
+    // 🔑 FORZAR el tipo desde el token (por si la API devuelve datos viejos)
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const normalizedUser = {
+      ...userData,
+      id: Number(userData.id),
+      tipo_usuario: payload.tipo || userData.tipo_usuario,  // ← Forzar tipo del token
+      disponible: !!userData.disponible,
     };
-    cargarUsuario();
-  }, [navigate]);
+    setUser(normalizedUser);
+    console.log('🔍 Usuario cargado en Dashboard:', normalizedUser);
+  };
+  cargarUsuario();
+}, [navigate]);
 
   // ============================================================
   // EFECTO 1.5: Cargar número de tarjeta del admin
@@ -676,13 +668,15 @@ const handleBecomeDriver = async () => {
   try {
     const response = await axios.put('/api/users/become-driver');
     console.log('🔍 Respuesta become-driver:', response.data);
-    console.log('🔍 Token nuevo:', response.data.token ? 'SÍ' : 'NO');
+    console.log('🔍 Token nuevo recibido:', response.data.token ? 'SÍ' : 'NO');
     console.log('🔍 Tipo en user:', response.data.user?.tipo_usuario);
 
     // 🔑 1. GUARDAR EL TOKEN NUEVO (con tipo 'conductor')
     if (response.data.token) {
       authService.setAuthToken(response.data.token);
       console.log('🔍 Token guardado en localStorage:', localStorage.getItem('token').substring(0, 50) + '...');
+    } else {
+      console.error('❌ El backend NO devolvió un token nuevo');
     }
 
     // 🔑 2. Actualizar el estado del usuario
